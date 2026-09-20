@@ -89,14 +89,20 @@ TRANSLATIONS = {
 
 def load_data():
   if os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-      return json.load(f)
+    try:
+      with open(DATA_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+    except Exception:
+      return {}
   return {}
 
 
 def save_data(data):
-  with open(DATA_FILE, "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False, indent=4)
+  try:
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+      json.dump(data, f, ensure_ascii=False, indent=4)
+  except Exception as e:
+    print(f"Error saving data: {e}")
 
 
 def load_admins():
@@ -115,8 +121,11 @@ def load_admins():
 
 def save_admins(admins):
   unique_admins = list(set([str(INITIAL_ADMIN_ID)] + [str(a) for a in admins]))
-  with open(ADMINS_FILE, "w", encoding="utf-8") as f:
-    json.dump(unique_admins, f, ensure_ascii=False, indent=4)
+  try:
+    with open(ADMINS_FILE, "w", encoding="utf-8") as f:
+      json.dump(unique_admins, f, ensure_ascii=False, indent=4)
+  except Exception as e:
+    print(f"Error saving admins: {e}")
 
 
 def is_admin(user_id):
@@ -126,8 +135,11 @@ def is_admin(user_id):
 
 def load_channels():
   if os.path.exists(CHANNELS_FILE):
-    with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
-      return json.load(f)
+    try:
+      with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+    except Exception:
+      pass
   default_channels = [
       {"name": "@hackwhatandetc", "url": "https://t.me/hackwhatandetc", "id": "@hackwhatandetc"},
       {"name": "@hackwhatandetcb", "url": "https://t.me/hackwhatandetcb", "id": "@hackwhatandetcb"}
@@ -137,8 +149,11 @@ def load_channels():
 
 
 def save_channels(channels):
-  with open(CHANNELS_FILE, "w", encoding="utf-8") as f:
-    json.dump(channels, f, ensure_ascii=False, indent=4)
+  try:
+    with open(CHANNELS_FILE, "w", encoding="utf-8") as f:
+      json.dump(channels, f, ensure_ascii=False, indent=4)
+  except Exception as e:
+    print(f"Error saving channels: {e}")
 
 
 def check_user_membership(user_id):
@@ -173,7 +188,10 @@ def get_main_menu(lang="dr"):
 
 def send_main_menu(chat_id, lang="dr"):
   t = TRANSLATIONS.get(lang, TRANSLATIONS["dr"])
-  bot.send_message(chat_id, t["welcome_menu"], reply_markup=get_main_menu(lang), parse_mode="Markdown")
+  try:
+    bot.send_message(chat_id, t["welcome_menu"], reply_markup=get_main_menu(lang), parse_mode="Markdown")
+  except Exception as e:
+    print(f"Error sending main menu: {e}")
 
 
 # ترد بررسی‌کننده زمان انقضای ربات‌ها (خاموش‌سازی خودکار چندگانه)
@@ -304,8 +322,7 @@ def set_language_callback(call):
   selected_lang = call.data.split("_")[1]
   
   data = load_data()
-  is_new_user = uid not in data
-  if is_new_user:
+  if uid not in data:
     data[uid] = {"score": 0, "bots": {}}
   data[uid]["lang"] = selected_lang
   save_data(data)
@@ -987,7 +1004,12 @@ def manage_score(message):
     bot.reply_to(message, "❌ فرمت صحیح:\n`/add USER_ID SCORE`", parse_mode="Markdown")
     return
   target_uid = args[1]
-  amount = int(args[2])
+  try:
+    amount = int(args[2])
+  except ValueError:
+    bot.reply_to(message, "❌ مقدار امتیاز باید عدد باشد.")
+    return
+
   data = load_data()
   if target_uid not in data:
     data[target_uid] = {"score": 0, "lang": "dr", "bots": {}}
@@ -1041,8 +1063,12 @@ def handle_docs_from_step(message):
 
   bot_unique_id = f"{uid}_{file_name}"
 
-  file_info = bot.get_file(file_id)
-  downloaded_file = bot.download_file(file_info.file_path)
+  try:
+    file_info = bot.get_file(file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+  except Exception as e:
+    bot.reply_to(message, f"❌ خطا در دانلود فایل: {e}")
+    return
   
   path = os.path.join(USER_BOTS_DIR, f"{bot_unique_id}_bot.py")
   with open(path, "wb") as f:
@@ -1059,8 +1085,14 @@ def handle_docs_from_step(message):
     bot.send_message(message.chat.id, error_report, parse_mode="Markdown")
     return
 
-  process = subprocess.Popen(["python3", path])
-  active_user_processes[bot_unique_id] = process
+  try:
+    process = subprocess.Popen(["python3", path])
+    active_user_processes[bot_unique_id] = process
+  except Exception as e:
+    bot.reply_to(message, f"❌ خطا در اجرای سورس ربات: {e}")
+    if os.path.exists(path):
+      os.remove(path)
+    return
 
   if uid not in data:
     data[uid] = {"score": 0, "lang": lang, "bots": {}}
