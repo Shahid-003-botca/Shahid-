@@ -544,7 +544,6 @@ def select_plan_callback(call):
   if uid not in data:
     data[uid] = {"score": score, "lang": lang, "bots": {}}
   
-  # فقط ذخیره اطلاعات پلن و درخواست فایل (بدون روشن کردن ربات)
   data[uid]["pending_cost"] = cost
   data[uid]["pending_duration"] = duration
   save_data(data)
@@ -1020,7 +1019,6 @@ def handle_docs_from_step(message):
   cost = data.get(uid, {}).get("pending_cost")
   duration = data.get(uid, {}).get("pending_duration")
 
-  # بررسی اینکه آیا کاربر اول پلن زمانی را انتخاب کرده است یا خیر
   if cost is None or duration is None:
     bot.reply_to(message, "❌ لطفاً ابتدا از منوی «آنلاین کردن ربات»، مدت زمان فعال‌سازی را انتخاب کنید.")
     return
@@ -1061,7 +1059,6 @@ def handle_docs_from_step(message):
     bot.send_message(message.chat.id, error_report, parse_mode="Markdown")
     return
 
-  # روشن کردن ربات پس از ارسال موفقیت‌آمیز فایل و تأیید سورس
   process = subprocess.Popen(["python3", path])
   active_user_processes[bot_unique_id] = process
 
@@ -1147,4 +1144,11 @@ if __name__ == "__main__":
     except Exception as e:
       print(f"Error loading saved bots on startup: {e}")
 
+  # حذف وب‌هوک قدیمی برای جلوگیری از خطای Conflict
+  try:
+    bot.remove_webhook()
+  except Exception as e:
+    print(f"Error removing webhook: {e}")
+
+  # شروع دریافت پیام‌ها
   bot.infinity_polling()
