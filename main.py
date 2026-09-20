@@ -1,4 +1,4 @@
-import json
+Import json
 import os
 import subprocess
 import threading
@@ -89,20 +89,14 @@ TRANSLATIONS = {
 
 def load_data():
   if os.path.exists(DATA_FILE):
-    try:
-      with open(DATA_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-    except Exception:
-      return {}
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+      return json.load(f)
   return {}
 
 
 def save_data(data):
-  try:
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-      json.dump(data, f, ensure_ascii=False, indent=4)
-  except Exception as e:
-    print(f"Error saving data: {e}")
+  with open(DATA_FILE, "w", encoding="utf-8") as f:
+    json.dump(data, f, ensure_ascii=False, indent=4)
 
 
 def load_admins():
@@ -121,11 +115,8 @@ def load_admins():
 
 def save_admins(admins):
   unique_admins = list(set([str(INITIAL_ADMIN_ID)] + [str(a) for a in admins]))
-  try:
-    with open(ADMINS_FILE, "w", encoding="utf-8") as f:
-      json.dump(unique_admins, f, ensure_ascii=False, indent=4)
-  except Exception as e:
-    print(f"Error saving admins: {e}")
+  with open(ADMINS_FILE, "w", encoding="utf-8") as f:
+    json.dump(unique_admins, f, ensure_ascii=False, indent=4)
 
 
 def is_admin(user_id):
@@ -135,11 +126,8 @@ def is_admin(user_id):
 
 def load_channels():
   if os.path.exists(CHANNELS_FILE):
-    try:
-      with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-    except Exception:
-      pass
+    with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
+      return json.load(f)
   default_channels = [
       {"name": "@hackwhatandetc", "url": "https://t.me/hackwhatandetc", "id": "@hackwhatandetc"},
       {"name": "@hackwhatandetcb", "url": "https://t.me/hackwhatandetcb", "id": "@hackwhatandetcb"}
@@ -149,11 +137,8 @@ def load_channels():
 
 
 def save_channels(channels):
-  try:
-    with open(CHANNELS_FILE, "w", encoding="utf-8") as f:
-      json.dump(channels, f, ensure_ascii=False, indent=4)
-  except Exception as e:
-    print(f"Error saving channels: {e}")
+  with open(CHANNELS_FILE, "w", encoding="utf-8") as f:
+    json.dump(channels, f, ensure_ascii=False, indent=4)
 
 
 def check_user_membership(user_id):
@@ -188,10 +173,7 @@ def get_main_menu(lang="dr"):
 
 def send_main_menu(chat_id, lang="dr"):
   t = TRANSLATIONS.get(lang, TRANSLATIONS["dr"])
-  try:
-    bot.send_message(chat_id, t["welcome_menu"], reply_markup=get_main_menu(lang), parse_mode="Markdown")
-  except Exception as e:
-    print(f"Error sending main menu: {e}")
+  bot.send_message(chat_id, t["welcome_menu"], reply_markup=get_main_menu(lang), parse_mode="Markdown")
 
 
 # ترد بررسی‌کننده زمان انقضای ربات‌ها (خاموش‌سازی خودکار چندگانه)
@@ -322,7 +304,8 @@ def set_language_callback(call):
   selected_lang = call.data.split("_")[1]
   
   data = load_data()
-  if uid not in data:
+  is_new_user = uid not in data
+  if is_new_user:
     data[uid] = {"score": 0, "bots": {}}
   data[uid]["lang"] = selected_lang
   save_data(data)
@@ -561,6 +544,7 @@ def select_plan_callback(call):
   if uid not in data:
     data[uid] = {"score": score, "lang": lang, "bots": {}}
   
+  # فقط ذخیره اطلاعات پلن و درخواست فایل (بدون روشن کردن ربات)
   data[uid]["pending_cost"] = cost
   data[uid]["pending_duration"] = duration
   save_data(data)
@@ -1004,12 +988,7 @@ def manage_score(message):
     bot.reply_to(message, "❌ فرمت صحیح:\n`/add USER_ID SCORE`", parse_mode="Markdown")
     return
   target_uid = args[1]
-  try:
-    amount = int(args[2])
-  except ValueError:
-    bot.reply_to(message, "❌ مقدار امتیاز باید عدد باشد.")
-    return
-
+  amount = int(args[2])
   data = load_data()
   if target_uid not in data:
     data[target_uid] = {"score": 0, "lang": "dr", "bots": {}}
@@ -1041,6 +1020,7 @@ def handle_docs_from_step(message):
   cost = data.get(uid, {}).get("pending_cost")
   duration = data.get(uid, {}).get("pending_duration")
 
+  # بررسی اینکه آیا کاربر اول پلن زمانی را انتخاب کرده است یا خیر
   if cost is None or duration is None:
     bot.reply_to(message, "❌ لطفاً ابتدا از منوی «آنلاین کردن ربات»، مدت زمان فعال‌سازی را انتخاب کنید.")
     return
@@ -1063,12 +1043,8 @@ def handle_docs_from_step(message):
 
   bot_unique_id = f"{uid}_{file_name}"
 
-  try:
-    file_info = bot.get_file(file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
-  except Exception as e:
-    bot.reply_to(message, f"❌ خطا در دانلود فایل: {e}")
-    return
+  file_info = bot.get_file(file_id)
+  downloaded_file = bot.download_file(file_info.file_path)
   
   path = os.path.join(USER_BOTS_DIR, f"{bot_unique_id}_bot.py")
   with open(path, "wb") as f:
@@ -1085,14 +1061,9 @@ def handle_docs_from_step(message):
     bot.send_message(message.chat.id, error_report, parse_mode="Markdown")
     return
 
-  try:
-    process = subprocess.Popen(["python3", path])
-    active_user_processes[bot_unique_id] = process
-  except Exception as e:
-    bot.reply_to(message, f"❌ خطا در اجرای سورس ربات: {e}")
-    if os.path.exists(path):
-      os.remove(path)
-    return
+  # روشن کردن ربات پس از ارسال موفقیت‌آمیز فایل و تأیید سورس
+  process = subprocess.Popen(["python3", path])
+  active_user_processes[bot_unique_id] = process
 
   if uid not in data:
     data[uid] = {"score": 0, "lang": lang, "bots": {}}
@@ -1176,11 +1147,4 @@ if __name__ == "__main__":
     except Exception as e:
       print(f"Error loading saved bots on startup: {e}")
 
-  # حذف وب‌هوک قدیمی برای جلوگیری از خطای Conflict
-  try:
-    bot.remove_webhook()
-  except Exception as e:
-    print(f"Error removing webhook: {e}")
-
-  # شروع دریافت پیام‌ها
   bot.infinity_polling()
