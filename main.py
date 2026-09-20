@@ -129,8 +129,8 @@ def load_channels():
     with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
       return json.load(f)
   default_channels = [
-      {"name": "@hackwhatandetc", "url": "https://t.me/hackwhatandetc", "id": "@hackwhatandetc"},
-      {"name": "@hackwhatandetcb", "url": "https://t.me/hackwhatandetcb", "id": "@hackwhatandetcb"}
+      {"name": "Team Two Brother", "url": "https://t.me/TEAM_TOW_BROTHER", "id": "@TEAM_TOW_BROTHER"},
+      {"name": "Python By Noori", "url": "https://t.me/PYTHON_BY_NOORI", "id": "@PYTHON_BY_NOORI"}
   ]
   save_channels(default_channels)
   return default_channels
@@ -1013,19 +1013,17 @@ def handle_docs_from_step(message):
   data = load_data()
   lang = data.get(uid, {}).get("lang", "dr")
 
+  if uid not in data or "pending_cost" not in data[uid]:
+    return
+
   if not check_user_membership(uid):
     bot.reply_to(message, "❌ Join channels first!" if lang == "en" else "❌ ابتدا باید در کانال‌ها عضو شوید!")
     return
 
-  cost = data.get(uid, {}).get("pending_cost")
-  duration = data.get(uid, {}).get("pending_duration")
+  cost = data[uid].get("pending_cost")
+  duration = data[uid].get("pending_duration")
 
-  # بررسی اینکه آیا کاربر اول پلن زمانی را انتخاب کرده است یا خیر
-  if cost is None or duration is None:
-    bot.reply_to(message, "❌ لطفاً ابتدا از منوی «آنلاین کردن ربات»، مدت زمان فعال‌سازی را انتخاب کنید.")
-    return
-
-  if data.get(uid, {}).get("score", 0) < cost:
+  if data[uid].get("score", 0) < cost:
     msg_text = f"❌ Not enough score! Need {cost} score." if lang == "en" else f"❌ امتیاز شما برای این پکیج کافی نیست ({cost} امتیاز لازم است)."
     bot.reply_to(message, msg_text)
     return
@@ -1061,13 +1059,9 @@ def handle_docs_from_step(message):
     bot.send_message(message.chat.id, error_report, parse_mode="Markdown")
     return
 
-  # روشن کردن ربات پس از ارسال موفقیت‌آمیز فایل و تأیید سورس
   process = subprocess.Popen(["python3", path])
   active_user_processes[bot_unique_id] = process
 
-  if uid not in data:
-    data[uid] = {"score": 0, "lang": lang, "bots": {}}
-  
   if "bots" not in data[uid]:
     data[uid]["bots"] = {}
 
