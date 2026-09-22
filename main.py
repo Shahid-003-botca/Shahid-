@@ -279,8 +279,12 @@ def start(message):
     except Exception as e:
       print(f"Error sending new user info to admin: {e}")
 
-  # اگر زبان کاربر هنوز انتخاب نشده است یا مقدار آن None است
-  if data[uid].get("lang") is None:
+  # بررسی دقیق‌تر وضعیت زبان کاربر
+  if uid not in data or data[uid].get("lang") is None:
+    if uid not in data:
+      data[uid] = {"score": 0, "lang": None, "bots": {}}
+      save_data(data)
+    
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
         types.InlineKeyboardButton("دری 🇦🇫", callback_data="lang_dr"),
@@ -316,13 +320,17 @@ def set_language_callback(call):
   data[uid]["lang"] = selected_lang
   save_data(data)
 
-  bot.answer_callback_query(call.id, "✅ Language saved!" if selected_lang == "en" else "✅ زبان ذخیره شد!")
+  try:
+    bot.answer_callback_query(call.id, "✅ Language saved!" if selected_lang == "en" else "✅ زبان ذخیره شد!")
+  except:
+    pass
   
   try:
     bot.delete_message(call.message.chat.id, call.message.message_id)
   except:
     pass
 
+  # بررسی عضویت اجباری پس از انتخاب زبان
   if not check_user_membership(uid):
     channels = load_channels()
     markup = types.InlineKeyboardMarkup(row_width=1)
