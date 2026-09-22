@@ -279,6 +279,7 @@ def start(message):
     except Exception as e:
       print(f"Error sending new user info to admin: {e}")
 
+  # اگر زبان کاربر هنوز انتخاب نشده است یا مقدار آن None است
   if data[uid].get("lang") is None:
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
@@ -311,10 +312,12 @@ def set_language_callback(call):
   data = load_data()
   if uid not in data:
     data[uid] = {"score": 0, "bots": {}}
+  
   data[uid]["lang"] = selected_lang
   save_data(data)
 
   bot.answer_callback_query(call.id, "✅ Language saved!" if selected_lang == "en" else "✅ زبان ذخیره شد!")
+  
   try:
     bot.delete_message(call.message.chat.id, call.message.message_id)
   except:
