@@ -1141,4 +1141,10 @@ if __name__ == "__main__":
     except Exception as e:
       print(f"Error loading saved bots on startup: {e}")
 
+  # حذف وب‌هوک قبلی برای جلوگیری از خطای Conflict (409)
+  try:
+    bot.remove_webhook()
+  except Exception as e:
+    print(f"Error removing webhook: {e}")
+
   bot.infinity_polling()
