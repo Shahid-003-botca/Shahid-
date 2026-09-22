@@ -279,12 +279,8 @@ def start(message):
     except Exception as e:
       print(f"Error sending new user info to admin: {e}")
 
-  # بررسی دقیق‌تر وضعیت زبان کاربر
+  # اگر زبان کاربر هنوز انتخاب نشده باشد (یا مقدار None باشد)
   if uid not in data or data[uid].get("lang") is None:
-    if uid not in data:
-      data[uid] = {"score": 0, "lang": None, "bots": {}}
-      save_data(data)
-    
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
         types.InlineKeyboardButton("دری 🇦🇫", callback_data="lang_dr"),
