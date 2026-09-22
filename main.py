@@ -89,8 +89,11 @@ TRANSLATIONS = {
 
 def load_data():
   if os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-      return json.load(f)
+    try:
+      with open(DATA_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+    except Exception:
+      return {}
   return {}
 
 
@@ -126,8 +129,11 @@ def is_admin(user_id):
 
 def load_channels():
   if os.path.exists(CHANNELS_FILE):
-    with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
-      return json.load(f)
+    try:
+      with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+    except Exception:
+      pass
   default_channels = [
       {"name": "Team Two Brother", "url": "https://t.me/TEAM_TOW_BROTHER", "id": "@TEAM_TOW_BROTHER"},
       {"name": "Python By Noori", "url": "https://t.me/PYTHON_BY_NOORI", "id": "@PYTHON_BY_NOORI"}
@@ -176,7 +182,6 @@ def send_main_menu(chat_id, lang="dr"):
   bot.send_message(chat_id, t["welcome_menu"], reply_markup=get_main_menu(lang), parse_mode="Markdown")
 
 
-# ترد بررسی‌کننده زمان انقضای ربات‌ها (خاموش‌سازی خودکار چندگانه)
 def background_expiration_checker():
   while True:
     try:
@@ -304,8 +309,7 @@ def set_language_callback(call):
   selected_lang = call.data.split("_")[1]
   
   data = load_data()
-  is_new_user = uid not in data
-  if is_new_user:
+  if uid not in data:
     data[uid] = {"score": 0, "bots": {}}
   data[uid]["lang"] = selected_lang
   save_data(data)
@@ -544,7 +548,6 @@ def select_plan_callback(call):
   if uid not in data:
     data[uid] = {"score": score, "lang": lang, "bots": {}}
   
-  # فقط ذخیره اطلاعات پلن و درخواست فایل (بدون روشن کردن ربات)
   data[uid]["pending_cost"] = cost
   data[uid]["pending_duration"] = duration
   save_data(data)
@@ -576,20 +579,6 @@ def delete_bot_callback(call):
   
   user_bots = data.get(uid, {}).get("bots", {})
   
-  if not user_bots:
-    legacy_files = [f for f in os.listdir(USER_BOTS_DIR) if f.startswith(f"{uid}_") and f.endswith(".py")]
-    if legacy_files:
-      user_bots = {}
-      for lf in legacy_files:
-        b_unique_id = lf.replace("_bot.py", "")
-        b_name = b_unique_id.replace(f"{uid}_", "")
-        user_bots[b_unique_id] = {"file_name": b_name}
-      
-      if uid not in data:
-        data[uid] = {"score": 0, "lang": lang, "bots": {}}
-      data[uid]["bots"] = user_bots
-      save_data(data)
-
   if not user_bots:
     msg_text = "❌ شما هیچ ربات فعالی روی سرور ندارید." if lang != "en" else "❌ You have no active bots."
     bot.send_message(call.message.chat.id, msg_text, reply_markup=get_main_menu(lang))
@@ -1127,21 +1116,11 @@ if __name__ == "__main__":
                   active_user_processes[b_unique_id] = proc
                 except Exception as e:
                   print(f"Failed to restart bot {b_unique_id}: {e}")
-          
-          else:
-            bot_path = os.path.join(USER_BOTS_DIR, f"{user_id}_bot.py")
-            if os.path.exists(bot_path):
-              try:
-                proc = subprocess.Popen(["python3", bot_path])
-                active_user_processes[user_id] = proc
-              except Exception as e:
-                print(f"Failed to restart legacy bot for {user_id}: {e}")
 
         save_data(saved_data)
     except Exception as e:
       print(f"Error loading saved bots on startup: {e}")
 
-  # حذف وب‌هوک قبلی برای جلوگیری از خطای Conflict (409)
   try:
     bot.remove_webhook()
   except Exception as e:
