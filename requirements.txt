@@ -1,6 +1,2 @@
 flask
 pyTelegramBotAPI
-requests
-aiohttp
-python-dotenv
-pytz
